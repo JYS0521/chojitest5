@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <style>
+    /* ===== 전체 배경 및 레이아웃 ===== */
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #b71c1c, #2e7d32);
+      overflow: hidden;
+      position: relative;
+      font-family: 'Malgun Gothic', sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: -100%; left: 0; right: 0; bottom: 0;
+      background-image: radial-gradient(circle, white 2px, transparent 0), radial-gradient(circle, white 4px, transparent 0);
+      background-size: 300px 300px;
+      animation: snowFall 10s linear infinite;
+    }
+
+    @keyframes snowFall {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(300px); }
+    }
+
+    /* ===== 메인 박스 ===== */
+    .main-box {
+      width: 70vw;
+      max-width: 900px;
+      background: rgba(245, 245, 245, 0.95);
+      padding: 60px 40px;
+      border-radius: 50px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      z-index: 10;
+    }
+
+    .main-box::before { content: "☃️"; position: absolute; top: -30px; left: 30px; font-size: 100px; }
+    .main-box::after { content: "🦌"; position: absolute; top: -30px; right: 30px; font-size: 100px; }
+
+    /* ===== 입력창 & 버튼 ===== */
+    .problem-box, .answer-box { display: flex; justify-content: center; gap: 30px; }
+    input {
+      width: 160px; height: 70px; background-color: #fffaf0; border: 2px solid #c62828;
+      border-radius: 15px; font-size: 48px; font-weight: bold; text-align: center; color: #c62828;
+    }
+
+    button {
+      width: 140px; height: 65px; background-color: #e53935; color: white; border: none;
+      border-radius: 15px; font-size: 28px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 5px 0 #b71c1c;
+      outline: none;
+    }
+
+    /* ===== 슬롯머신 및 정답 노출 로직 (2초) ===== */
+    .main-box:has(button:focus) {
+      animation: waitShake 2.1s ease-in-out;
+    }
+
+    @keyframes waitShake {
+      0%, 100% { transform: scale(1) rotate(0); }
+      10%, 30%, 50%, 70%, 90% { transform: scale(1.02) rotate(1.5deg); }
+      20%, 40%, 60%, 80% { transform: scale(1.02) rotate(-1.5deg); }
+    }
+
+    .result-box {
+      height: 140px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #result {
+      font-size: 90px;
+      line-height: 140px;
+      color: #c62828;
+      font-weight: bold;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      opacity: 0;
+      visibility: hidden;
+      position: absolute;
+      left: 65%;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    .main-box:has(button:focus) .result-box::after {
+      content: "??\A 82\A 14\A 55\A 03\A 99\A 37\A ??";
+      white-space: pre;
+      position: absolute;
+      width: 200px;
+      left: 65%;
+      top: 0;
+      transform: translateX(-50%);
+      color: #c62828;
+      font-size: 90px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 140px;
+      background: rgba(245, 245, 245, 1);
+      visibility: visible;
+      opacity: 1;
+      z-index: 5;
+      animation: slotScroll 0.15s infinite, fadeOut 0s forwards 2.1s;
+    }
+
+    @keyframes slotScroll {
+      0% { transform: translate(-50%, 0); }
+      100% { transform: translate(-50%, -840px); }
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; display: none; }
+    }
+
+    .main-box:has(button:focus) #result {
+      animation: finalReveal 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 2.1s forwards;
+    }
+
+    @keyframes finalReveal {
+      0% { transform: translate(-50%, 20px) scale(0.5); opacity: 0; visibility: visible; }
+      100% { transform: translate(-50%, 0) scale(1); opacity: 1; visibility: visible; }
+    }
+
+    .main-box:has(button:focus)::before,
+    .main-box:has(button:focus)::after {
+      animation: characterJump 0.4s infinite;
+    }
+
+    @keyframes characterJump {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-40px); }
+    }
+
+    .result-label {
+      font-size: 35px;
+      font-weight: bold;
+      color: #333;
+      margin-right: 180px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="main-box">
+      <div class="problem-box">
+        <input type="number" id="qz-num1" placeholder="문제 번호">
+        <input type="number" id="qz-num2" placeholder="문제 번호">
+        <input type="number" id="qz-num3" placeholder="문제 번호">
+        
+        <button id="button" onclick="
+          const s = document.getElementById('audio-slot'); 
+          const w = document.getElementById('audio-win');
+          s.pause(); s.currentTime = 0;
+          w.pause(); w.currentTime = 0;
+          
+          const playPromise = s.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              setTimeout(() => { s.pause(); w.play(); }, 2100);
+            }).catch(() => {
+              setTimeout(() => { w.play(); }, 2100);
+            });
+          }
+        ">체크</button>
+      </div>
+
+      <div class="answer-box">
+        <input type="number" id="qz-answer1" placeholder="답 입력">
+        <input type="number" id="qz-answer2" placeholder="답 입력">
+        <input type="number" id="qz-answer3" placeholder="답 입력">
+      </div>
+
+      <div class="result-box"> 
+        <span class="result-label">오차 평균 :</span>
+        <p id="result"></p>
+      </div> 
+
+      <audio id="audio-slot" src="slot_sound.mp3" preload="auto"></audio>
+      <audio id="audio-win" src="win_sound.mp3" preload="auto"></audio>
+    </div>
+  </div>
+
+  <script>
+    const problem = [0, 2400, 1100, 1800, 2300, 8600, 1800, 7800, 4800, 1160, 2300, 0, 13500, 8690, 29000, 14000, 14900, 1290000, 0, 0, 419000];
+    const btn = document.getElementById('button');
+    btn.addEventListener('click', ()=> {
+      var num = document.getElementById('qz-num1').value;
+      var num2 = document.getElementById('qz-num2').value;
+      var num3 = document.getElementById('qz-num3').value;
+      var answer1 = document.getElementById('qz-answer1').value;
+      var answer2 = document.getElementById('qz-answer2').value;
+      var answer3 = document.getElementById('qz-answer3').value;
+
+      problem_prise1 = problem[num] || 0;
+      problem_prise2 = problem[num2] || 0;
+      problem_prise3 = problem[num3] || 0;
+
+      sum1 = problem_prise1 ? Math.round(Math.abs((problem_prise1 - answer1) / problem_prise1 * 100)) : 0;
+      sum2 = problem_prise2 ? Math.round(Math.abs((problem_prise2 - answer2) / problem_prise2 * 100)) : 0;
+      sum3 = problem_prise3 ? Math.round(Math.abs((problem_prise3 - answer3) / problem_prise3 * 100)) : 0;
+
+      percent = Math.round((sum1 + sum2 + sum3) / 3);
+      document.getElementById('result').innerText = percent;
+    });
+  </script>
+</body>
+</html>
